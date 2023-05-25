@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CSV File Reader</title>
+</head>
+<body>
+  <input type="file" id="csvFileInput">
+  
+  <script>
+    // JavaScript code goes here
+
+    function parseCSV(csvText) {
+      // Same parsing logic as before
+      const lines = csvText.split('\n');
+      // ...
+    }
+
+    function readCSVFile(file) {
+      const reader = new FileReader();
+
+      reader.onload = function(event) {
+        const csvText = event.target.result;
+        const data = parseCSV(csvText);
+        console.log(data); // Do something with the parsed data
+      };
+
+      reader.onerror = function(event) {
+        console.error('Error reading CSV file:', event.target.error);
+      };
+
+      reader.readAsText(file);
+    }
+
+    const csvFileInput = document.getElementById('csvFileInput');
+
+    csvFileInput.addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      readCSVFile(file);
+    });
+  </script>
+</body>
+</html>
