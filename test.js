@@ -5,11 +5,31 @@ const util = require("util");
 
 let result = [];
 let unknown = "N/A";
+let vmwareOriginCharacter = "VMware, Inc.";
+let vmwareReplaceCharacter = "VMware. Inc.";
+let vmware7OriginCharacter = "VMware7,1";
+let vmware7ReplaceCharacter = "VMware7.1";
+let regexVMware1 = /VMware, Inc./g;
+let regexVMware2 = /VMware. Inc./g;
+let regexVMware71 = /VMware7,1/g;
+let regexVMware72 = /VMware7.1/g;
 
 const readFile = util.promisify(fs.readFile);
 
 function getContent() {
-  return readFile("./cmdb_ci1.csv", 'utf-8');
+  return readFile("./cmdb_ci.csv", "utf-8");
+}
+
+function reconvertText(item) {
+  if (!item || item.length == 0) return "";
+  if (item.toLowerCase().includes(vmwareReplaceCharacter.toLowerCase())) {
+    const newItem = item
+      .replaceAll(regexVMware2, vmwareOriginCharacter)
+      .replaceAll(regexVMware72, vmware7OriginCharacter);
+    return newItem;
+  } else {
+    return item;
+  }
 }
 
 try {
@@ -19,16 +39,28 @@ try {
 
     let temp = [];
     for (let item of array) {
-      let converted = item.split(",");
+      let newItem;
+      const isExistVMWare = item
+        .toLowerCase()
+        .includes(vmwareOriginCharacter.toLowerCase());
+      if (isExistVMWare) {
+        newItem = item
+          .replaceAll(regexVMware1, vmwareReplaceCharacter)
+          .replaceAll(regexVMware71, vmware7ReplaceCharacter);
+      }
+      let converted = isExistVMWare
+        ? newItem.replaceAll('"', "").split(",")
+        : item.replaceAll('"', "").split(",");
       let name = converted[0] ?? "";
-      let serialNumber = converted[1] ?? "";
-      let manufacturer = converted[2] ?? "";
-      let modelID = converted[3] ?? "";
-      let os = unknown;
+      let serialNumber =
+        converted[1] && converted[1].length > 0 ? converted[1] : converted[0];
+      let manufacturer = reconvertText(converted[2]) ?? "";
+      let modelID = reconvertText(converted[3]) ?? "";
+      let os = "";
       let ipAddress = converted[4] ?? "";
       let location = converted[6] ?? "";
       let classType = converted[8] ?? "";
-      let assignedTo = unknown;
+      let assignedTo = "";
       let discovery = converted[7] ?? "";
       let dateOnly = converted[9]?.split(" ")?.[0] ?? "";
 
