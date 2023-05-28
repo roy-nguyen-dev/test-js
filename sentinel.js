@@ -1,8 +1,9 @@
-const { convertArrayToCSV } = require("convert-array-to-csv");
+// const { convertArrayToCSV } = require("convert-array-to-csv");
 const converter = require("convert-array-to-csv");
 const fs = require("fs");
 const util = require("util");
 var XLSX = require("xlsx");
+const Blob = require('buffer');
 
 let result = [];
 let sccm = "SCCM";
@@ -45,90 +46,110 @@ function reconvertText(item) {
   }
 }
 
-var wb = XLSX.readFile("./sentinel.xlsx");
+var wb = XLSX.readFile("./sentinel_report.xlsx");
 
-var worksheet = wb.Sheets[wb.SheetNames[0]];
+// var worksheet = wb.Sheets[wb.SheetNames];
 
 // Define the column you want to extract values from (e.g., column A)
-var column = "A";
+// var column = "B";
+const sheet = wb.Sheets[wb.SheetNames];
+const jsonData = XLSX.utils.sheet_to_json(sheet);
+const endpointName = 'Endpoint Name';
+const serialNumber = 'Serial Number';
+// const manufacturer = 'Site';
+const modelName = 'Model Name';
+const os = 'OS';
+const lastReportedIP = 'Last Reported IP';
+// const location = 'location';
+// const classType = 'classType';
+const lastLoggedInUser = 'Last Logged In User';
+const discoverySource = 'SentinelOne';
+// const activity = 'SentinelOne';
+const endPointValue = jsonData.map(row => row[endpointName]);
+const serialValue = jsonData.map(row => row[serialNumber]);
+const modelValue = jsonData.map(row => row[modelName]);
+const osValue = jsonData.map(row => row[os]);
+const lastReportedIPValue = jsonData.map(row => row[lastReportedIP]);
+const lastLoggedInValue = jsonData.map(row => row[lastLoggedInUser]);
+
+
 
 // Find the range of cells in the specified column
-var columnRange =
-  worksheet[column + "1:" + column + worksheet["!ref"].split(":")[1]];
-console.log("columnRange", columnRange);
-// Array to store the values in the column
-var columnValues = [];
+// var columnRange = XLSX.utils.decode_range(worksheet['!ref']);
+// var columnValues = [];
+// var column1Values = [];
 
-// Iterate through each cell in the column range
-columnRange.forEach(function (cell) {
-  // Access the value of each cell
-  var cellValue = cell.v;
+// for (var rowNum = columnRange.s.r; rowNum <= columnRange.e.r; rowNum++) {
+//   var cellAddress = XLSX.utils.encode_cell({ r: rowNum, c: columnRange.s.c });
+//   var cell = worksheet[cellAddress];
 
-  // Add the value to the columnValues array
-  columnValues.push(cellValue);
+//   // Access the value of each cell
+//   var cellValue = (cell && cell.v) || '';
+
+//   // Add the value to the columnValues array
+//   columnValues.push(cellValue);
+// }
+
+
+
+const newWorkbook = XLSX.utils.book_new();
+const newWorksheet = XLSX.utils.aoa_to_sheet([]);
+
+endPointValue.forEach(function (value, index) {
+  var cellAddress = 'A' + (index + 1);
+  var discoveryCellAddress = 'J' + (index + 1);
+  XLSX.utils.sheet_add_aoa(newWorksheet, [[value]], { origin: cellAddress });
+  XLSX.utils.sheet_add_aoa(newWorksheet, [[discoverySource]], { origin: discoveryCellAddress });
+});
+serialValue.forEach(function (value, index) {
+  var cellAddress = 'B' + (index + 1);
+  XLSX.utils.sheet_add_aoa(newWorksheet, [[value]], { origin: cellAddress });
+});
+modelValue.forEach(function (value, index) {
+  var cellAddress = 'D' + (index + 1);
+  XLSX.utils.sheet_add_aoa(newWorksheet, [[value]], { origin: cellAddress });
+});
+osValue.forEach(function (value, index) {
+  var cellAddress = 'E' + (index + 1);
+  XLSX.utils.sheet_add_aoa(newWorksheet, [[value]], { origin: cellAddress });
+});
+lastReportedIPValue.forEach(function (value, index) {
+  var cellAddress = 'F' + (index + 1);
+  XLSX.utils.sheet_add_aoa(newWorksheet, [[value]], { origin: cellAddress });
+});
+lastLoggedInValue.forEach(function (value, index) {
+  var cellAddress = 'I' + (index + 1);
+  XLSX.utils.sheet_add_aoa(newWorksheet, [[value]], { origin: cellAddress });
 });
 
-console.log(columnValues);
+XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, 'Sheet1');
 
-// try {
-//   getContent().then((data) => {
-//     if (!data) return;
-//     let array = data.split("\n");
+XLSX.writeFile(newWorkbook, 'output5.xlsx');
 
-//     let temp = [];
-//     for (let item of array) {
-//       let newItem;
-//       const isExistVMWare = item
-//         .toLowerCase()
-//         .includes(vmwareOriginCharacter.toLowerCase());
-//       if (isExistVMWare) {
-//         newItem = item
-//           .replaceAll(regexVMware1, vmwareReplaceCharacter)
-//           .replaceAll(regexVMware71, vmware7ReplaceCharacter)
-//           .replaceAll(regexVMware201, vmware20ReplaceCharacter);
-//       }
-//       let converted = isExistVMWare
-//         ? newItem.replaceAll('"', "").split(",")
-//         : item.replaceAll('"', "").split(",");
 
-//       let name = converted[0] ?? "";
-//       let serialNumber =
-//         converted[8] && converted[8].length > 0 ? converted[8] : converted[0];
-//       let manufacturer = reconvertText(converted[6]) ?? "";
-//       let modelID = reconvertText(converted[7]) ?? "";
-//       let os = converted[10] ?? "";
-//       let ipAddress = "";
-//       let location = converted[5] ?? "";
-//       let classType = "";
-//       let assignedTo = converted[2] ?? "";
-//       let discovery = sccm;
-//       let dateOnly = converted[9] ?? "";
 
-//       temp.push([
-//         name,
-//         serialNumber,
-//         manufacturer,
-//         modelID,
-//         os,
-//         ipAddress,
-//         location,
-//         classType,
-//         assignedTo,
-//         discovery,
-//         dateOnly,
-//       ]);
-//     }
+// var workbook = XLSX.utils.book_new();
 
-//     console.log(temp);
+// // Create a new worksheet
+// var newWorksheet = XLSX.utils.aoa_to_sheet([]);
 
-//     const csvFromArrayOfArrays = convertArrayToCSV(temp);
-//     fs.writeFile("output2.csv", csvFromArrayOfArrays, (error) => {
-//       if (error) {
-//         console.log(10, error);
-//       }
-//       console.log("csv file saved successfully.");
-//     });
-//   });
-// } catch (error) {
-//   console.log(error);
+// columnValues.forEach(function (value, index) {
+//   var cellAddress = column + (index + 1);
+//   XLSX.utils.sheet_add_aoa(newWorksheet, [[value]], { origin: cellAddress });
+// });
+
+// // Add the worksheet to the workbook
+// XLSX.utils.book_append_sheet(workbook, newWorksheet, 'Sheet 1');
+
+// // Convert the workbook to an array buffer
+// var excelData = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+
+// // Save the Excel file
+// function saveExcelFile(data, filename) {
+//   var buffer = Buffer.from(data);
+//   fs.writeFileSync(filename, buffer);
 // }
+
+// // Save the Excel file with a specific filename
+// saveExcelFile(excelData, 'output4.xlsx');
+
